@@ -26,7 +26,9 @@ CGI-DATAJAM-2026
     ├── main.py
     ├── requirements.txt
     ├── venv
-    └── data
-        ├── raw
-        └── processed
+    ├── data
+    │   ├── raw
+    │   └── processed
+    ├── service
+    └── scripts
 ```
