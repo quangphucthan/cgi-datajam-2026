@@ -1,3 +1,4 @@
+```text
 CGI-DATAJAM-2026
 │
 ├── .gitignore
@@ -25,3 +26,4 @@ CGI-DATAJAM-2026
     ├── main.py
     ├── requirements.txt
     └── venv
+```
