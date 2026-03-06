@@ -25,5 +25,8 @@ CGI-DATAJAM-2026
     ├── .gitignore
     ├── main.py
     ├── requirements.txt
-    └── venv
+    ├── venv
+    └── data
+        ├── raw
+        └── processed
 ```
