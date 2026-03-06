@@ -1,0 +1,15 @@
+# Node
+
+node_modules/
+
+# Python
+
+backend/venv/
+
+# Mac
+
+.DS_Store
+
+# Env
+
+.env
