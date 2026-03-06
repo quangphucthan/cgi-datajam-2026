@@ -12,13 +12,19 @@ def filter_since(df: pd.DataFrame, cutoff: str = "2023-01-01") -> pd.DataFrame:
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
     return df[df["Date"] >= cutoff].copy()
 
-
+""""
+    row is invalid if
+    1. Measure Name = "Emergency Visits CTAS" and CTAS value is not numerical or in 1-5
+    2. Measure Name != "Emergency Visits CTAS" or "Emergency Visits"
+""" 
 def drop_invalid_ctas_rows(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     ctas_numeric = pd.to_numeric(df["CTAS"], errors="coerce")
+    allowed_measures = {"Emergency Visits CTAS", "Emergency Visits"}
+    is_allowed_measure = df["Measure Name"].isin(allowed_measures)
     is_emergency_ctas_measure = df["Measure Name"].eq("Emergency Visits CTAS")
-    invalid_ctas = ctas_numeric.isna()
-    return df[~(is_emergency_ctas_measure & invalid_ctas)].copy()
+    invalid_ctas = ~ctas_numeric.between(1, 5, inclusive="both")
+    return df[is_allowed_measure & ~(is_emergency_ctas_measure & invalid_ctas)].copy()
 
 
 def main() -> None:
@@ -40,7 +46,7 @@ def main() -> None:
     before_count = len(df)
     df = drop_invalid_ctas_rows(df)
     print(
-        "Dropped invalid Emergency Visits CTAS rows: "
+        "Dropped invalid measure/CTAS rows: "
         f"{before_count} -> {len(df)} rows"
     )
 
