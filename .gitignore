@@ -13,3 +13,4 @@ backend/venv/
 # Env
 
 .env
+.venv
