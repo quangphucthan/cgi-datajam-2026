@@ -135,6 +135,13 @@ def to_ctas_wide_format(df: pd.DataFrame) -> pd.DataFrame:
     wide_df = wide_df[["Hospital", "Date", "CTAS1", "CTAS2", "CTAS3", "CTAS4", "CTAS5"]]
     for col in ["CTAS1", "CTAS2", "CTAS3", "CTAS4", "CTAS5"]:
         wide_df[col] = wide_df[col].astype(int)
+
+    expected_months = wide_df["Date"].nunique()
+    complete_hospitals = (
+        wide_df.groupby("Hospital")["Date"].nunique().loc[lambda s: s == expected_months].index
+    )
+    wide_df = wide_df[wide_df["Hospital"].isin(complete_hospitals)].copy()
+
     return wide_df.sort_values(["Hospital", "Date"], kind="stable").reset_index(drop=True)
 
 
