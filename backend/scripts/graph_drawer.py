@@ -165,6 +165,90 @@ def draw_line_chart_svg(monthly_df: pd.DataFrame, output_path: Path) -> None:
     output_path.write_text("\n".join(svg), encoding="utf-8")
 
 
+def build_hospital_low_acuity_ratio(df: pd.DataFrame) -> pd.DataFrame:
+    hospital_df = (
+        df.groupby("Hospital", as_index=False)[["low_severity", "total_ER"]]
+        .sum()
+        .copy()
+    )
+    hospital_df["low_ratio"] = (
+        hospital_df["low_severity"] / hospital_df["total_ER"]
+    ).where(hospital_df["total_ER"] != 0, 0.0)
+    return hospital_df.sort_values("low_ratio", ascending=False, kind="stable").reset_index(drop=True)
+
+
+def draw_low_acuity_by_hospital_svg(hospital_df: pd.DataFrame, output_path: Path) -> None:
+    width, height = 1500, 760
+    margin_left, margin_right, margin_top, margin_bottom = 90, 50, 90, 230
+    chart_width = width - margin_left - margin_right
+    chart_height = height - margin_top - margin_bottom
+    max_ratio = max(0.01, float(hospital_df["low_ratio"].max()))
+
+    n = len(hospital_df)
+    slot_width = chart_width / max(1, n)
+    bar_width = slot_width * 0.7
+
+    svg = []
+    svg.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">')
+    svg.append(f'<rect x="0" y="0" width="{width}" height="{height}" fill="white"/>')
+    svg.append(
+        '<text x="750" y="42" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" '
+        'font-size="24" font-weight="700" fill="#222">Graph 3 - Low-Acuity Ratio by Hospital</text>'
+    )
+    svg.append(
+        '<text x="750" y="68" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" '
+        'font-size="15" fill="#444">Low acuity = (CTAS4 + CTAS5) / Total ER visits</text>'
+    )
+
+    x0, y0 = margin_left, height - margin_bottom
+    x1, y1 = width - margin_right, margin_top
+    svg.append(f'<line x1="{x0}" y1="{y0}" x2="{x1}" y2="{y0}" stroke="#333" stroke-width="2"/>')
+    svg.append(f'<line x1="{x0}" y1="{y0}" x2="{x0}" y2="{y1}" stroke="#333" stroke-width="2"/>')
+
+    for i in range(6):
+        y = y0 - (chart_height * i / 5)
+        pct = (max_ratio * i / 5) * 100
+        svg.append(f'<line x1="{x0}" y1="{y:.2f}" x2="{x1}" y2="{y:.2f}" stroke="#e6e6e6" stroke-width="1"/>')
+        svg.append(
+            f'<text x="{x0 - 10}" y="{y + 5:.2f}" text-anchor="end" font-family="Helvetica, Arial, sans-serif" '
+            f'font-size="12" fill="#555">{pct:.0f}%</text>'
+        )
+
+    for i, row in hospital_df.iterrows():
+        ratio = float(row["low_ratio"])
+        bar_h = (ratio / max_ratio) * chart_height
+        x = margin_left + (i * slot_width) + ((slot_width - bar_width) / 2)
+        y = y0 - bar_h
+        svg.append(
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{bar_width:.2f}" height="{bar_h:.2f}" '
+            'fill="#2a8bf2" rx="2" ry="2"/>'
+        )
+        svg.append(
+            f'<text x="{x + bar_width / 2:.2f}" y="{y - 6:.2f}" text-anchor="middle" '
+            f'font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#222">{ratio:.2%}</text>'
+        )
+
+        label_x = x + bar_width / 2
+        label_y = y0 + 8
+        hospital_name = str(row["Hospital"]).replace("&", "&amp;")
+        svg.append(
+            f'<text x="{label_x:.2f}" y="{label_y:.2f}" transform="rotate(55 {label_x:.2f} {label_y:.2f})" '
+            f'font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#222">{hospital_name}</text>'
+        )
+
+    svg.append(
+        f'<text x="{(x0 + x1) / 2:.2f}" y="{height - 28}" text-anchor="middle" '
+        'font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#333">Hospital</text>'
+    )
+    svg.append(
+        f'<text x="24" y="{(y0 + y1) / 2:.2f}" text-anchor="middle" transform="rotate(-90 24 {(y0 + y1) / 2:.2f})" '
+        'font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#333">Low acuity %</text>'
+    )
+
+    svg.append("</svg>")
+    output_path.write_text("\n".join(svg), encoding="utf-8")
+
+
 def main() -> None:
     input_path = (
         Path(__file__).resolve().parents[1]
@@ -185,11 +269,15 @@ def main() -> None:
     monthly_df = build_monthly_er_demand(df)
     output_path_2 = output_dir / "Graph_2_ER_Demand_Over_Time.svg"
     draw_line_chart_svg(monthly_df, output_path_2)
+    hospital_ratio_df = build_hospital_low_acuity_ratio(df)
+    output_path_3 = output_dir / "Graph_3_Low_Acuity_Ratio_by_Hospital.svg"
+    draw_low_acuity_by_hospital_svg(hospital_ratio_df, output_path_3)
 
     print("CTAS totals:", ctas_totals)
     print(f"Overall low-level ratio: {low_level_ratio:.4f}")
     print(f"Saved graph: {output_path}")
     print(f"Saved graph: {output_path_2}")
+    print(f"Saved graph: {output_path_3}")
 
 
 if __name__ == "__main__":
