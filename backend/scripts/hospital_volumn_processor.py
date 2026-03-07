@@ -185,27 +185,27 @@ def main() -> None:
     df = normalize_actual_to_int(df)
 
     # output a processed dataset to processed folder
-    output_path = Path(__file__).resolve().parents[1] / "data" / "processed" / "Hospital_Service_Volumes_processed.csv"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_dir = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "processed"
+        / "hospital_service_volume"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "Hospital_Service_Volumes_processed.csv"
     # df.to_csv(output_path, index=False)
     # print(f"Saved processed dataset: {output_path}")
 
     # sort by hospital names
     sorted_output_path = (
-        Path(__file__).resolve().parents[1]
-        / "data"
-        / "processed"
-        / "Hospital_Service_Volumes_Processed_20260306.csv"
+        output_dir / "Hospital_Service_Volumes_Processed_20260306.csv"
     )
     sorted_df = sort_by_hospital(aggregate_hospital_month_rows(df))
     sorted_df.to_csv(sorted_output_path, index=False)
     print(f"Saved sorted dataset: {sorted_output_path}")
 
     ctas_wide_output_path = (
-        Path(__file__).resolve().parents[1]
-        / "data"
-        / "processed"
-        / "Hospital_Service_Volumes_CTAS_Wide_20260306.csv"
+        output_dir / "Hospital_Service_Volumes_CTAS_Wide_20260306.csv"
     )
     ctas_wide_df = to_ctas_wide_format(sorted_df)
     ctas_wide_df.to_csv(ctas_wide_output_path, index=False)
