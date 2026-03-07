@@ -23,11 +23,11 @@ const ChatInterface = ({ messages, onSendMessage, isLoading }) => {
 
     const getUrgencyColor = (level) => {
         switch (level) {
-            case 1: return 'bg-blue-600 text-white'; // ER Immediate
-            case 2: return 'bg-red-600 text-white'; // ER
-            case 3: return 'bg-yellow-500 text-white'; // Urgent Clinic
+            case 1: return 'bg-red-600 text-white'; // ER Immediate
+            case 2: return 'bg-yellow-500 text-white'; // ER
+            case 3: return 'bg-orange-500 text-white'; // Urgent Clinic
             case 4: return 'bg-green-600 text-white'; // Clinic
-            case 5: return 'bg-slate-200 text-slate-800'; // Non-Urgent (Pharmacy)
+            case 5: return 'bg-blue-400 text-slate-800'; // Non-Urgent (Pharmacy)
             default: return 'bg-slate-200 text-slate-800';
         }
     };
