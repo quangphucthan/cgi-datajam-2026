@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import ChatInterface from './components/ChatInterface';
+import MapView from './components/MapView';
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+    const [messages, setMessages] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    // const [latestTriageData, setLatestTriageData] = useState(null);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    const handleSendMessage = async (text) => {
+        const newMsg = {
+            id: Date.now(),
+            role: 'user',
+            content: text,
+            timestamp: new Date()
+        };
 
-export default App
+        setMessages(prev => [...prev, newMsg]);
+        setIsLoading(true);
+    }
+
+    return (
+        <div className="flex flex-col md:flex-row h-full w-full font-sans bg-slate-50 text-slate-900 overflow-hidden">
+            {/* Left Panel: AI Triage Chat */}
+            <div className="w-full md:w-[400px] lg:w-[450px] h-1/2 md:h-full flex-shrink-0 z-10 shadow-2xl transition-all duration-300">
+                <ChatInterface
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    isLoading={isLoading}
+                />
+            </div>
+
+            {/* Right Panel: Predictive Map */}
+            {/* <div className="w-full flex-1 h-1/2 md:h-full relative z-0 border-t md:border-t-0 md:border-l border-slate-300 shadow-inner">
+                <MapView triageData={latestTriageData} />
+            </div> */}
+        </div>
+    );
+};
+
+export default App;
