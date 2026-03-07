@@ -21,6 +21,43 @@ class TriageRequest(BaseModel):
     text: str = Field(min_length=1)
 
 
+class PredictResponse(BaseModel):
+    predicted_ctas: int
+    advice: str
+    location: str | None = None
+
+
+CTAS_RECOMMENDATION = {
+    1: "Go to the Emergency Room immediately!",
+    2: "Go to the Emergency Room as soon as possible.",
+    3: "Visit a clinic for urgent care.",
+    4: "You can go to a clinic or urgent care center.",
+    5: "You can manage at home or visit a pharmacy.",
+}
+
+
+def infer_ctas_from_symptoms(symptoms: list[str]) -> int:
+    lowered = {s.lower().strip() for s in symptoms}
+
+    if ("chest pain" in lowered and "profuse sweating" in lowered) or (
+        "shortness of breath" in lowered and "chest pain" in lowered
+    ):
+        return 1
+
+    if ("chest pain" in lowered and "vomiting" in lowered) or (
+        "head injury" in lowered and "dizziness" in lowered
+    ):
+        return 2
+
+    if lowered.intersection({"severe pain", "high fever", "vomiting", "infection"}):
+        return 3
+
+    if lowered.intersection({"rash", "sprain", "mild fever", "cold", "cough"}):
+        return 4
+
+    return 5
+
+
 @app.get("/")
 def root():
     return {"message": "Backend running"}
@@ -54,3 +91,21 @@ def triage(input_data: TriageRequest):
         raise HTTPException(status_code=502, detail=f"Failed calling n8n webhook: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=502, detail="n8n returned non-JSON response") from exc
+
+
+@app.post("/predict", response_model=PredictResponse)
+def predict(data: dict):
+    symptoms = data.get("symptoms", [])
+    if isinstance(symptoms, str):
+        symptoms = [symptoms]
+    if not isinstance(symptoms, list):
+        symptoms = []
+
+    location = data.get("location")
+    ctas_level = infer_ctas_from_symptoms([str(s) for s in symptoms])
+
+    return PredictResponse(
+        predicted_ctas=ctas_level,
+        advice=CTAS_RECOMMENDATION[ctas_level],
+        location=str(location) if location is not None else None,
+    )

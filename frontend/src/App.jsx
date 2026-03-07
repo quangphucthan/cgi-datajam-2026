@@ -87,11 +87,15 @@ const App = () => {
             const triageData = await sendTriageRequest(text);
             setLatestTriageData(triageData);
 
-          
+            const responseText =
+                typeof triageData?.reply === 'string' && triageData.reply.trim()
+                    ? triageData.reply
+                    : JSON.stringify(triageData, null, 2);
+
             const modelMessage = {
                 id: Date.now() + 1,
                 role: 'model',
-                content: triageData.reply || 'No debug reply returned.',
+                content: responseText || 'No response returned from n8n.',
                 triageData,
                 timestamp: new Date()
             };
