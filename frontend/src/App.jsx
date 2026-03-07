@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatInterface from './components/ChatInterface';
-import MapView from './components/MapView';
-import HospitalCard from './components/HospitalCard';
+// import MapView from './components/MapView';
+import HospitalListView from './components/HospitalListView';
+import { sendTriageRequest } from './services/service';
 
 const App = () => {
-    const [messages, setMessages] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [latestTriageData, setLatestTriageData] = useState(null);
-
-    // Mock hospital data based on CSV structure
-    const mockHospitals = [
+    // Initial Mock hospital data
+    const INITIAL_HOSPITALS = [
         {
             facility: "Halifax Infirmary (QEII)",
             address: "1796 Summer Street",
@@ -44,6 +41,36 @@ const App = () => {
         }
     ];
 
+    const [messages, setMessages] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [latestTriage, setLatestTriageData] = useState(null);
+    const [userLocation, setUserLocation] = useState(null);
+    const [locationStatus, setLocationStatus] = useState('pending'); // 'pending', 'granted', 'denied', 'error', 'unsupported'
+    const [hospitals, setHospitals] = useState(INITIAL_HOSPITALS);
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+
+    useEffect(() => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition (
+                (position) => {
+                    setUserLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                    setLocationStatus('granted');
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                    setLocationStatus(error.code === 1 ? 'denied' : 'error'); // 1 = permission denied
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+        else {
+            setLocationStatus('unsupported');
+        }
+    }, []);
+
     const handleSendMessage = async (text) => {
         const newMsg = {
             id: Date.now(),
@@ -54,6 +81,42 @@ const App = () => {
 
         setMessages(prev => [...prev, newMsg]);
         setIsLoading(true);
+
+        // Calling the backend service with the message and userLocation
+        try {
+            const triageData = await sendTriageRequest(text, userLocation);
+
+            const modelMsg = {
+                id: (Date.now() + 1).toString(),
+                role: 'model',
+                content: triageData.reply,
+                timestamp: new Date(),
+                triageData: triageData
+            };
+
+            setMessages(prev => [...prev, modelMsg]);
+            setLatestTriageData(triageData);
+            
+            // Check for hospital data update
+            if (triageData.hospitals && Array.isArray(triageData.hospitals)) {
+                setHospitals(triageData.hospitals);
+            }
+
+        } catch (error) {
+            console.error('Error sending triage request:', error);
+
+            const errorMsg = {
+                id: (Date.now() + 1).toString(),
+                role: 'model',
+                content: "I apologize, but I encountered an error connecting to the server. Please try again or seek medical attention if urgent.",
+                timestamp: new Date()
+            };
+
+            setMessages(prev => [...prev, errorMsg]);
+
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -64,88 +127,44 @@ const App = () => {
                     messages={messages}
                     onSendMessage={handleSendMessage}
                     isLoading={isLoading}
+                    locationStatus={locationStatus}
                 />
             </div>
 
-            {/* Right Panel: Hospital Recommendations */}
+            {/* Right Panel: Hospital Recommendations & Map */}
             <div className="w-full flex-1 h-1/2 md:h-full relative z-0 border-t md:border-t-0 md:border-l border-slate-300 shadow-inner p-4 flex flex-col" style={{ backgroundImage: 'linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px), linear-gradient(0deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
-                <div className="flex-shrink-0">
-                    <h2 className="text-xl font-bold text-slate-800 mb-4">Recommended Facilities</h2>
-                    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 mb-4">
-                        {mockHospitals.map((hospital, index) => (
-                            <HospitalCard key={index} {...hospital} />
-                        ))}
-                    </div>
+                
+                {/* Navigation Toolbar */}
+                <div className="flex-shrink-0 mb-4 bg-slate-50/80 backdrop-blur-sm p-1 rounded-lg border border-slate-200 inline-flex self-start sticky top-0 z-20">
+                    <button 
+                        onClick={() => setViewMode('list')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                            viewMode === 'list' 
+                                ? 'bg-blue-600 text-white shadow-sm' 
+                                : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                        }`}
+                    >
+                        <i className="fas fa-list-ul mr-2"></i> List View
+                    </button>
+                    {/* <button 
+                        onClick={() => setViewMode('map')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                            viewMode === 'map' 
+                                ? 'bg-blue-600 text-white shadow-sm' 
+                                : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                        }`}
+                    >
+                        <i className="fas fa-map-marked-alt mr-2"></i> Map View
+                    </button> */}
                 </div>
 
-                <div className="flex-grow"></div>
-
-                {/* Informational Cards - Always at bottom */}
-                <div className="flex-shrink-0 mt-4">
-                    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-                        {/* CTAS Levels Card */}
-                        <div className="bg-white rounded-lg shadow-md p-4 border border-slate-200">
-                            <h3 className="font-bold text-lg text-slate-800 mb-3 flex items-center">
-                                <i className="fas fa-exclamation-triangle text-red-500 mr-2"></i>
-                                CTAS Levels
-                            </h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">1</span>
-                                    <span className="text-slate-700">Resuscitation - Life threatening</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">2</span>
-                                    <span className="text-slate-700">Emergent - Serious condition</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">3</span>
-                                    <span className="text-slate-700">Urgent - Needs timely care</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-green-600 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">4</span>
-                                    <span className="text-slate-700">Less Urgent - Can wait</span>
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-blue-400 text-slate-800 text-xs font-bold rounded-full flex items-center justify-center mr-2">5</span>
-                                    <span className="text-slate-700">Non-Urgent - Self-care or pharmacy</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Family Doctors Card */}
-                        <div className="bg-white rounded-lg shadow-md p-4 border border-slate-200">
-                            <h3 className="font-bold text-lg text-slate-800 mb-3 flex items-center">
-                                <i className="fas fa-user-md text-blue-500 mr-2"></i>
-                                Family Doctors
-                            </h3>
-                            <p className="text-sm text-slate-600 mb-2">
-                                Family doctors (GPs) provide primary care for routine health needs, preventive care, and manage chronic conditions.
-                            </p>
-                            <p className="text-sm text-slate-600 mb-3">
-                                <strong>How to get one:</strong> Register with a family practice through your provincial health plan. Many communities have walk-in clinics while you search.
-                            </p>
-                            <a href="https://www.nshealth.ca/family-doctors" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                Find a Family Doctor →
-                            </a>
-                        </div>
-
-                        {/* Insurance Resources Card */}
-                        <div className="bg-white rounded-lg shadow-md p-4 border border-slate-200">
-                            <h3 className="font-bold text-lg text-slate-800 mb-3 flex items-center">
-                                <i className="fas fa-shield-alt text-green-500 mr-2"></i>
-                                Health Insurance
-                            </h3>
-                            <p className="text-sm text-slate-600 mb-2">
-                                Nova Scotia has universal healthcare through Medicare. International students may need supplemental coverage.
-                            </p>
-                            <div className="space-y-1 text-sm">
-                                <a href="https://www.nshealth.ca/medicare" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:text-blue-800">Medicare Information</a>
-                                <a href="https://www.canada.ca/en/services/health.html" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:text-blue-800">Federal Health Resources</a>
-                                <a href="https://www.nshealth.ca/international" target="_blank" rel="noopener noreferrer" className="block text-blue-600 hover:text-blue-800">International Visitor Insurance</a>
-                            </div>
-                        </div>
-                    </div>
+                {/* Content Area */}
+                <div className="flex-grow overflow-hidden relative">
+                    {viewMode === 'list' ? (
+                        <HospitalListView hospitals={hospitals} />
+                    ) : (
+                        <MapView triageData={latestTriage} userLocation={userLocation} />
+                    )}
                 </div>
             </div>
 
