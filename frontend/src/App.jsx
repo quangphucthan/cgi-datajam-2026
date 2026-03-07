@@ -68,7 +68,7 @@ const App = () => {
             </div>
 
             {/* Right Panel: Hospital Recommendations */}
-            <div className="w-full flex-1 h-1/2 md:h-full relative z-0 border-t md:border-t-0 md:border-l border-slate-300 shadow-inner p-4 flex flex-col">
+            <div className="w-full flex-1 h-1/2 md:h-full relative z-0 border-t md:border-t-0 md:border-l border-slate-300 shadow-inner p-4 flex flex-col" style={{ backgroundImage: 'linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px), linear-gradient(0deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
                 <div className="flex-shrink-0">
                     <h2 className="text-xl font-bold text-slate-800 mb-4">Recommended Facilities</h2>
                     <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 mb-4">
@@ -91,15 +91,15 @@ const App = () => {
                             </h3>
                             <div className="space-y-2 text-sm">
                                 <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">1</span>
+                                    <span className="w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">1</span>
                                     <span className="text-slate-700">Resuscitation - Life threatening</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">2</span>
+                                    <span className="w-6 h-6 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">2</span>
                                     <span className="text-slate-700">Emergent - Serious condition</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">3</span>
+                                    <span className="w-6 h-6 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center mr-2">3</span>
                                     <span className="text-slate-700">Urgent - Needs timely care</span>
                                 </div>
                                 <div className="flex items-center">
@@ -107,7 +107,7 @@ const App = () => {
                                     <span className="text-slate-700">Less Urgent - Can wait</span>
                                 </div>
                                 <div className="flex items-center">
-                                    <span className="w-6 h-6 bg-slate-200 text-slate-800 text-xs font-bold rounded-full flex items-center justify-center mr-2">5</span>
+                                    <span className="w-6 h-6 bg-blue-400 text-slate-800 text-xs font-bold rounded-full flex items-center justify-center mr-2">5</span>
                                     <span className="text-slate-700">Non-Urgent - Self-care or pharmacy</span>
                                 </div>
                             </div>
