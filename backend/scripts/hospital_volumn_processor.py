@@ -90,6 +90,19 @@ def aggregate_hospital_month_rows(df: pd.DataFrame) -> pd.DataFrame:
         )["Actual"]
         .sum()
     )
+    # Ensure each hospital-month has CTAS 1..5; missing values are filled with 0.
+    base_keys = emergency_totals[["Zone", "Hospital", "Type", "Date"]].drop_duplicates()
+    ctas_values = pd.DataFrame({"CTAS": [1.0, 2.0, 3.0, 4.0, 5.0]})
+    base_keys["_k"] = 1
+    ctas_values["_k"] = 1
+    expected_ctas = base_keys.merge(ctas_values, on="_k").drop(columns=["_k"])
+    expected_ctas["Measure Name"] = "Emergency Visits CTAS"
+    emergency_ctas = expected_ctas.merge(
+        emergency_ctas,
+        on=["Zone", "Hospital", "Type", "Date", "Measure Name", "CTAS"],
+        how="left",
+    )
+    emergency_ctas["Actual"] = emergency_ctas["Actual"].fillna(0)
 
     combined = pd.concat([emergency_totals, emergency_ctas], ignore_index=True)
     combined["Actual"] = combined["Actual"].astype(int)
