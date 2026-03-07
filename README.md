@@ -113,3 +113,8 @@ Example response:
 - `500 N8N_WEBHOOK_URL is not configured`: env var not loaded in the backend shell.
 - `502 Bad Gateway`: backend could not reach n8n, n8n returned an HTTP error, or n8n returned non-JSON.
 - If using `/webhook-test/...`, make sure n8n is in test listening mode.
+
+## Our presentation
+google doc: https://docs.google.com/document/d/1rTAWS2ZlLqejZ_N--YHcUeTFSFsZyDoUjbXxxXjxA-A/edit?tab=t.0
+presentation slide: https://docs.google.com/presentation/d/1r34S6yu0ylaaLeQ5pBjz2kyg70In4kEbHobScx5y_ko/edit?slide=id.g3c55df61ae3_0_12#slide=id.g3c55df61ae3_0_12
+demo: https://www.youtube.com/watch?v=q1-4X3uDSH0
