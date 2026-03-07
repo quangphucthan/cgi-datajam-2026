@@ -138,15 +138,15 @@ def main() -> None:
     # output a processed dataset to processed folder
     output_path = Path(__file__).resolve().parents[1] / "data" / "processed" / "Hospital_Service_Volumes_processed.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
-    print(f"Saved processed dataset: {output_path}")
+    # df.to_csv(output_path, index=False)
+    # print(f"Saved processed dataset: {output_path}")
 
     # sort by hospital names
     sorted_output_path = (
         Path(__file__).resolve().parents[1]
         / "data"
         / "processed"
-        / "Hospital_Service_Volumes_grouped_by_hospital.csv"
+        / "Hospital_Service_Volumes_Processed_20260306.csv"
     )
     sorted_df = sort_by_hospital(aggregate_hospital_month_rows(df))
     sorted_df.to_csv(sorted_output_path, index=False)
