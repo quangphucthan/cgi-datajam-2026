@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const ChatInterface = ({ messages, onSendMessage, isLoading }) => {
+const ChatInterface = ({ messages, onSendMessage, isLoading, locationStatus }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef(null);
 
@@ -23,12 +23,36 @@ const ChatInterface = ({ messages, onSendMessage, isLoading }) => {
 
     const getUrgencyColor = (level) => {
         switch (level) {
-            case 1: return 'bg-blue-600 text-white'; // ER Immediate
-            case 2: return 'bg-red-600 text-white'; // ER
-            case 3: return 'bg-yellow-500 text-white'; // Urgent Clinic
+            case 1: return 'bg-red-600 text-white'; // ER Immediate
+            case 2: return 'bg-yellow-500 text-white'; // ER
+            case 3: return 'bg-orange-500 text-white'; // Urgent Clinic
             case 4: return 'bg-green-600 text-white'; // Clinic
-            case 5: return 'bg-slate-200 text-slate-800'; // Non-Urgent (Pharmacy)
+            case 5: return 'bg-blue-400 text-slate-800'; // Non-Urgent (Pharmacy)
             default: return 'bg-slate-200 text-slate-800';
+        }
+    };
+
+    const LocationIndicator = () => {
+        if (locationStatus === 'granted') {
+            return (
+                <span className="text-[10px] text-green-300 flex items-center mt-1">
+                    <i className="fas fa-location-arrow mr-1"></i> Location Active
+                </span>
+            );
+        }
+        else if (locationStatus === 'pending') {
+            return (
+                <span className="text-[10px] text-amber-300 flex items-center mt-1">
+                    <i className="fas fa-location-dot mr-1"></i> Requesting Location
+                </span>
+            );
+        }
+        else {
+            return (
+                <span className="text-[10px] text-amber-300 flex items-center mt-1" title="Using default Nova Scotia center">
+                    <i className="fas fa-map-marker-alt mr-1"></i> Default Location - Nova Scotia Province
+                </span>
+            );
         }
     };
 

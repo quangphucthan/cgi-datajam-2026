@@ -7,7 +7,7 @@ export const sendTriageRequest = async (message) => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ text: message })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
