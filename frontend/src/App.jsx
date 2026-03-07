@@ -72,52 +72,45 @@ const App = () => {
     }, []);
 
     const handleSendMessage = async (text) => {
-        const newMsg = {
+        const userMessage = {
             id: Date.now(),
             role: 'user',
             content: text,
             timestamp: new Date()
         };
 
-        setMessages(prev => [...prev, newMsg]);
+        setMessages((prev) => [...prev, userMessage]);
         setIsLoading(true);
 
-        // Calling the backend service with the message and userLocation
+        // send request to backend
         try {
-            const triageData = await sendTriageRequest(text, userLocation);
-
-            const modelMsg = {
-                id: (Date.now() + 1).toString(),
-                role: 'model',
-                content: triageData.reply,
-                timestamp: new Date(),
-                triageData: triageData
-            };
-
-            setMessages(prev => [...prev, modelMsg]);
+            const triageData = await sendTriageRequest(text);
             setLatestTriageData(triageData);
-            
-            // Check for hospital data update
-            if (triageData.hospitals && Array.isArray(triageData.hospitals)) {
-                setHospitals(triageData.hospitals);
-            }
 
-        } catch (error) {
-            console.error('Error sending triage request:', error);
-
-            const errorMsg = {
-                id: (Date.now() + 1).toString(),
+          
+            const modelMessage = {
+                id: Date.now() + 1,
                 role: 'model',
-                content: "I apologize, but I encountered an error connecting to the server. Please try again or seek medical attention if urgent.",
+                content: triageData.reply || 'No debug reply returned.',
+                triageData,
                 timestamp: new Date()
             };
 
-            setMessages(prev => [...prev, errorMsg]);
+            setMessages((prev) => [...prev, modelMessage]);
+        } catch (error) {
+            const errorMessage = {
+                id: Date.now() + 1,
+                role: 'model',
+                content: 'I could not reach the triage service right now. Please try again in a moment.',
+                timestamp: new Date()
+            };
 
+            setMessages((prev) => [...prev, errorMessage]);
+            console.error('Triage request failed:', error);
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full font-sans bg-slate-50 text-slate-900 overflow-hidden">
