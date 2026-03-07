@@ -109,6 +109,35 @@ def aggregate_hospital_month_rows(df: pd.DataFrame) -> pd.DataFrame:
     return combined
 
 
+def to_ctas_wide_format(df: pd.DataFrame) -> pd.DataFrame:
+    ctas_df = df[df["Measure Name"] == "Emergency Visits CTAS"].copy()
+    ctas_df["CTAS"] = pd.to_numeric(ctas_df["CTAS"], errors="coerce").astype("Int64")
+    ctas_df["Date"] = pd.to_datetime(ctas_df["Date"], errors="coerce").dt.strftime("%Y-%m")
+
+    wide_df = (
+        ctas_df.pivot_table(
+            index=["Hospital", "Date"],
+            columns="CTAS",
+            values="Actual",
+            aggfunc="sum",
+            fill_value=0,
+        )
+        .reset_index()
+    )
+
+    for ctas_value in [1, 2, 3, 4, 5]:
+        if ctas_value not in wide_df.columns:
+            wide_df[ctas_value] = 0
+
+    wide_df = wide_df.rename(
+        columns={1: "CTAS1", 2: "CTAS2", 3: "CTAS3", 4: "CTAS4", 5: "CTAS5"}
+    )
+    wide_df = wide_df[["Hospital", "Date", "CTAS1", "CTAS2", "CTAS3", "CTAS4", "CTAS5"]]
+    for col in ["CTAS1", "CTAS2", "CTAS3", "CTAS4", "CTAS5"]:
+        wide_df[col] = wide_df[col].astype(int)
+    return wide_df.sort_values(["Hospital", "Date"], kind="stable").reset_index(drop=True)
+
+
 def main() -> None:
     df = load_csv("Hospital_Service_Volumes_20260306.csv")
 
@@ -151,6 +180,16 @@ def main() -> None:
     sorted_df = sort_by_hospital(aggregate_hospital_month_rows(df))
     sorted_df.to_csv(sorted_output_path, index=False)
     print(f"Saved sorted dataset: {sorted_output_path}")
+
+    ctas_wide_output_path = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "processed"
+        / "Hospital_Service_Volumes_CTAS_Wide_20260306.csv"
+    )
+    ctas_wide_df = to_ctas_wide_format(sorted_df)
+    ctas_wide_df.to_csv(ctas_wide_output_path, index=False)
+    print(f"Saved CTAS wide dataset: {ctas_wide_output_path}")
 
     
 
