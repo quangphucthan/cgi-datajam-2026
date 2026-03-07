@@ -27,6 +27,16 @@ def drop_invalid_ctas_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df[is_allowed_measure & ~(is_emergency_ctas_measure & invalid_ctas)].copy()
 
 
+# sort
+def sort_by_hospital(df: pd.DataFrame) -> pd.DataFrame:
+    sorted_df = df.copy()
+    sorted_df["Hospital"] = sorted_df["Hospital"].astype(str).str.strip()
+    return sorted_df.sort_values(
+        by=["Hospital", "Date", "Measure Name", "CTAS"],
+        kind="stable",
+    ).reset_index(drop=True)
+
+
 def main() -> None:
     df = load_csv("Hospital_Service_Volumes_20260306.csv")
 
@@ -55,6 +65,17 @@ def main() -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
     print(f"Saved processed dataset: {output_path}")
+
+    # sort by hospital names
+    sorted_output_path = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "processed"
+        / "Hospital_Service_Volumes_grouped_by_hospital.csv"
+    )
+    sorted_df = sort_by_hospital(df)
+    sorted_df.to_csv(sorted_output_path, index=False)
+    print(f"Saved sorted dataset: {sorted_output_path}")
 
 if __name__ == "__main__":
     main()
