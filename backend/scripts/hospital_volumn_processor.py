@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import pandas as pd
+import re
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from services.data_loader import load_csv
@@ -37,6 +38,30 @@ def sort_by_hospital(df: pd.DataFrame) -> pd.DataFrame:
     ).reset_index(drop=True)
 
 
+def normalize_actual_to_int(df: pd.DataFrame) -> pd.DataFrame:
+    normalized_df = df.copy()
+
+    def parse_actual(value: object) -> int:
+        if pd.isna(value):
+            return 0
+        if isinstance(value, (int, float)):
+            return int(round(value))
+
+        text = str(value).strip()
+        if not text:
+            return 0
+
+        # Remove wrapping quotes and thousands separators, then validate numeric format.
+        text = text.strip("\"'")
+        text = text.replace(",", "")
+        if re.fullmatch(r"[+-]?\d+(\.\d+)?", text):
+            return int(round(float(text)))
+        return 0
+
+    normalized_df["Actual"] = normalized_df["Actual"].map(parse_actual).astype(int)
+    return normalized_df
+
+
 def main() -> None:
     df = load_csv("Hospital_Service_Volumes_20260306.csv")
 
@@ -59,6 +84,9 @@ def main() -> None:
         "Dropped invalid measure/CTAS rows: "
         f"{before_count} -> {len(df)} rows"
     )
+    
+    # for all actual values in the dataset, make them int. ie: some values are marked with "", reduce it.
+    df = normalize_actual_to_int(df)
 
     # output a processed dataset to processed folder
     output_path = Path(__file__).resolve().parents[1] / "data" / "processed" / "Hospital_Service_Volumes_processed.csv"
@@ -76,6 +104,8 @@ def main() -> None:
     sorted_df = sort_by_hospital(df)
     sorted_df.to_csv(sorted_output_path, index=False)
     print(f"Saved sorted dataset: {sorted_output_path}")
+
+    
 
 if __name__ == "__main__":
     main()
