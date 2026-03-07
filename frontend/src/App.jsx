@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ChatInterface from './components/ChatInterface';
 import MapView from './components/MapView';
 import HospitalCard from './components/HospitalCard';
+import { sendTriageRequest } from './services/service';
 
 const App = () => {
     const [messages, setMessages] = useState([]);
@@ -45,16 +46,44 @@ const App = () => {
     ];
 
     const handleSendMessage = async (text) => {
-        const newMsg = {
+        const userMessage = {
             id: Date.now(),
             role: 'user',
             content: text,
             timestamp: new Date()
         };
 
-        setMessages(prev => [...prev, newMsg]);
+        setMessages((prev) => [...prev, userMessage]);
         setIsLoading(true);
-    }
+
+        // send request to backend
+        try {
+            const triageData = await sendTriageRequest(text);
+            setLatestTriageData(triageData);
+
+            const modelMessage = {
+                id: Date.now() + 1,
+                role: 'model',
+                content: triageData.reply || 'No debug reply returned.',
+                triageData,
+                timestamp: new Date()
+            };
+
+            setMessages((prev) => [...prev, modelMessage]);
+        } catch (error) {
+            const errorMessage = {
+                id: Date.now() + 1,
+                role: 'model',
+                content: 'I could not reach the triage service right now. Please try again in a moment.',
+                timestamp: new Date()
+            };
+
+            setMessages((prev) => [...prev, errorMessage]);
+            console.error('Triage request failed:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full font-sans bg-slate-50 text-slate-900 overflow-hidden">

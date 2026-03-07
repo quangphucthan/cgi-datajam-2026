@@ -1,6 +1,8 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export const sendTriageRequest = async (message) => {
     try {
-        const response = await fetch ('http://localhost:5000/api/triage', {
+        const response = await fetch(`${API_BASE_URL}/api/triage`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -9,11 +11,10 @@ export const sendTriageRequest = async (message) => {
         });
 
         if (!response.ok) {
-            throw new Error(`Server error: ${response.statusText}`);
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json();
-        return data;
+        return await response.json();
     } catch (error) {
         console.error('Error sending triage request:', error);
         throw error;
