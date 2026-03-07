@@ -136,6 +136,19 @@ def to_ctas_wide_format(df: pd.DataFrame) -> pd.DataFrame:
     for col in ["CTAS1", "CTAS2", "CTAS3", "CTAS4", "CTAS5"]:
         wide_df[col] = wide_df[col].astype(int)
 
+    wide_df["total_ER"] = (
+        wide_df["CTAS1"]
+        + wide_df["CTAS2"]
+        + wide_df["CTAS3"]
+        + wide_df["CTAS4"]
+        + wide_df["CTAS5"]
+    )
+    wide_df["low_severity"] = wide_df["CTAS4"] + wide_df["CTAS5"]
+    wide_df["low_ratio"] = (
+        wide_df["low_severity"] / wide_df["total_ER"]
+    ).where(wide_df["total_ER"] != 0, 0.0)
+    wide_df["low_ratio"] = wide_df["low_ratio"].round(2)
+
     expected_months = wide_df["Date"].nunique()
     complete_hospitals = (
         wide_df.groupby("Hospital")["Date"].nunique().loc[lambda s: s == expected_months].index
