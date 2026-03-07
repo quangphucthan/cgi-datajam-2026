@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="520">
 <rect x="0" y="0" width="900" height="520" fill="white"/>
 <text x="450" y="42" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="700" fill="#222">Graph 1 - CTAS Distribution (Total ER)</text>
+<text x="860" y="70" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#333">Overall low-level ratio: 36.61%</text>
 <line x1="90" y1="430" x2="860" y2="430" stroke="#333" stroke-width="2"/>
 <line x1="90" y1="430" x2="90" y2="80" stroke="#333" stroke-width="2"/>
 <line x1="90" y1="430.00" x2="860" y2="430.00" stroke="#e6e6e6" stroke-width="1"/>
