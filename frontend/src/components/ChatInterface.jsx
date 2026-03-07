@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const ChatInterface = ({ messages, onSendMessage, isLoading }) => {
+const ChatInterface = ({ messages, onSendMessage, isLoading, locationStatus }) => {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef(null);
 
@@ -29,6 +29,30 @@ const ChatInterface = ({ messages, onSendMessage, isLoading }) => {
             case 4: return 'bg-green-600 text-white'; // Clinic
             case 5: return 'bg-blue-400 text-slate-800'; // Non-Urgent (Pharmacy)
             default: return 'bg-slate-200 text-slate-800';
+        }
+    };
+
+    const LocationIndicator = () => {
+        if (locationStatus === 'granted') {
+            return (
+                <span className="text-[10px] text-green-300 flex items-center mt-1">
+                    <i className="fas fa-location-arrow mr-1"></i> Location Active
+                </span>
+            );
+        }
+        else if (locationStatus === 'pending') {
+            return (
+                <span className="text-[10px] text-amber-300 flex items-center mt-1">
+                    <i className="fas fa-location-dot mr-1"></i> Requesting Location
+                </span>
+            );
+        }
+        else {
+            return (
+                <span className="text-[10px] text-amber-300 flex items-center mt-1" title="Using default Nova Scotia center">
+                    <i className="fas fa-map-marker-alt mr-1"></i> Default Location - Nova Scotia Province
+                </span>
+            );
         }
     };
 
