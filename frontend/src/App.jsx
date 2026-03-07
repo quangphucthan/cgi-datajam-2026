@@ -4,6 +4,49 @@ import ChatInterface from './components/ChatInterface';
 import HospitalListView from './components/HospitalListView';
 import { sendTriageRequest } from './services/service';
 
+const parseJsonIfPossible = (value) => {
+    try {
+        return JSON.parse(value);
+    } catch {
+        return null;
+    }
+};
+
+const extractReplyText = (triageData) => {
+    let candidate = triageData?.reply ?? triageData;
+
+    // Unwrap nested JSON strings returned by workflows.
+    while (typeof candidate === 'string') {
+        const trimmed = candidate.trim();
+        const looksJson = (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'));
+        if (!looksJson) break;
+        const parsed = parseJsonIfPossible(trimmed);
+        if (!parsed) break;
+        candidate = parsed;
+    }
+
+    if (Array.isArray(candidate)) {
+        candidate = candidate.length > 0 ? candidate[0] : '';
+    }
+
+    if (candidate && typeof candidate === 'object') {
+        candidate = candidate.reply ?? candidate.output ?? candidate.message ?? candidate.text ?? JSON.stringify(candidate);
+    }
+
+    let text = typeof candidate === 'string' ? candidate : JSON.stringify(candidate ?? triageData, null, 2);
+    text = text.replace(/\\n/g, '\n');
+
+    // Indent each non-empty line after a newline.
+    return text
+        .split('\n')
+        .map((line, index) => {
+            if (index === 0 || line.trim() === '') return line;
+            return `    ${line}`;
+        })
+        .join('\n')
+        .trim();
+};
+
 const App = () => {
     // Initial Mock hospital data
     const INITIAL_HOSPITALS = [
@@ -85,18 +128,18 @@ const App = () => {
         // send request to backend
         try {
             const triageData = await sendTriageRequest(text);
-            setLatestTriageData(triageData);
-
-            const responseText =
-                typeof triageData?.reply === 'string' && triageData.reply.trim()
-                    ? triageData.reply
-                    : JSON.stringify(triageData, null, 2);
+            const responseText = extractReplyText(triageData);
+            const triageDataForUi = {
+                ...triageData,
+                reply: responseText,
+            };
+            setLatestTriageData(triageDataForUi);
 
             const modelMessage = {
                 id: Date.now() + 1,
                 role: 'model',
                 content: responseText || 'No response returned from n8n.',
-                triageData,
+                triageData: triageDataForUi,
                 timestamp: new Date()
             };
 

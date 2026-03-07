@@ -37,22 +37,27 @@ CTAS_RECOMMENDATION = {
 
 
 def infer_ctas_from_symptoms(symptoms: list[str]) -> int:
-    lowered = {s.lower().strip() for s in symptoms}
+    lowered = [str(s).lower().strip() for s in symptoms]
+    lowered_set = set(lowered)
+    combined = " ".join(lowered)
 
-    if ("chest pain" in lowered and "profuse sweating" in lowered) or (
-        "shortness of breath" in lowered and "chest pain" in lowered
-    ):
+    has_chest_pain = "chest pain" in combined
+    has_sweating = "sweating" in combined or "profuse sweating" in combined
+    has_shortness_of_breath = "shortness of breath" in combined
+    has_vomiting = "vomiting" in combined
+    has_head_injury = "head injury" in combined
+    has_dizziness = "dizziness" in combined
+
+    if (has_chest_pain and has_sweating) or (has_shortness_of_breath and has_chest_pain):
         return 1
 
-    if ("chest pain" in lowered and "vomiting" in lowered) or (
-        "head injury" in lowered and "dizziness" in lowered
-    ):
+    if (has_chest_pain and has_vomiting) or (has_head_injury and has_dizziness):
         return 2
 
-    if lowered.intersection({"severe pain", "high fever", "vomiting", "infection"}):
+    if lowered_set.intersection({"severe pain", "high fever", "vomiting", "infection"}):
         return 3
 
-    if lowered.intersection({"rash", "sprain", "mild fever", "cold", "cough"}):
+    if lowered_set.intersection({"rash", "sprain", "mild fever", "cold", "cough"}):
         return 4
 
     return 5
