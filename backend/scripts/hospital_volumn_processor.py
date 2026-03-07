@@ -62,6 +62,40 @@ def normalize_actual_to_int(df: pd.DataFrame) -> pd.DataFrame:
     return normalized_df
 
 
+def aggregate_hospital_month_rows(df: pd.DataFrame) -> pd.DataFrame:
+    aggregated_df = df.copy()
+    aggregated_df["CTAS"] = pd.to_numeric(aggregated_df["CTAS"], errors="coerce")
+
+    emergency_totals = aggregated_df[
+        aggregated_df["Measure Name"] == "Emergency Visits"
+    ].copy()
+    emergency_totals = (
+        emergency_totals.groupby(
+            ["Zone", "Hospital", "Type", "Date", "Measure Name"],
+            as_index=False,
+            dropna=False,
+        )["Actual"]
+        .sum()
+    )
+    emergency_totals["CTAS"] = pd.NA
+
+    emergency_ctas = aggregated_df[
+        aggregated_df["Measure Name"] == "Emergency Visits CTAS"
+    ].copy()
+    emergency_ctas = (
+        emergency_ctas.groupby(
+            ["Zone", "Hospital", "Type", "Date", "Measure Name", "CTAS"],
+            as_index=False,
+            dropna=False,
+        )["Actual"]
+        .sum()
+    )
+
+    combined = pd.concat([emergency_totals, emergency_ctas], ignore_index=True)
+    combined["Actual"] = combined["Actual"].astype(int)
+    return combined
+
+
 def main() -> None:
     df = load_csv("Hospital_Service_Volumes_20260306.csv")
 
@@ -101,7 +135,7 @@ def main() -> None:
         / "processed"
         / "Hospital_Service_Volumes_grouped_by_hospital.csv"
     )
-    sorted_df = sort_by_hospital(df)
+    sorted_df = sort_by_hospital(aggregate_hospital_month_rows(df))
     sorted_df.to_csv(sorted_output_path, index=False)
     print(f"Saved sorted dataset: {sorted_output_path}")
 
